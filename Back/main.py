@@ -30,8 +30,7 @@ app = FastAPI(
     version="0.1",
 )
 
-# load the sentiment model
-
+# load the model
 with open(
     join(dirname(realpath(__file__)), "models/model_pipeline.joblib"), "rb"
 ) as f:
@@ -39,10 +38,7 @@ with open(
 
 
 # cleaning the data
-
-
 def text_cleaning(text, remove_stop_words=True, lemmatize_words=True):
-    # Clean the text, with the option to remove stop_words and to lemmatize word
 
     # Clean the text
     text = re.sub(r"[^A-Za-z0-9]", " ", str(text))
@@ -75,13 +71,13 @@ def text_cleaning(text, remove_stop_words=True, lemmatize_words=True):
 @app.get("/")
 def read_root():
     return{
-        "Proyecto": "1 - Parte 2",
-        "Integrante 1": "Daniel Santamaría Álvarez",
-        "Integrante 2": "Laura Daniela Manrique",    
-        "Integrante 3": "Gabriel Serna"   
+        "Proyecto 1 Inteligencia de negocios": "Parte 2",
+        "Integrante 1": "Juan David Becerra - 201911588",
+        "Integrante 2": "Nicolas Chalee Guerrero - 2019",    
+        "Integrante 3": "Juan Andrés Santiago - 201821950"   
     }
 
-@app.get("/predict-elegibility")
+@app.get("/predict-elegibilit")
 def predict_label(study: str):
     """
     A simple function that receive a review content and predict the sentiment of the content.
@@ -105,7 +101,7 @@ def predict_label(study: str):
 
     return result
 
-@app.post("/knn")
+@app.post("/predict-elegibility")
 def postKNN(data: DListar):
     dict = jsonable_encoder(data)
     df = json_normalize(dict['texto'])
@@ -114,14 +110,9 @@ def postKNN(data: DListar):
     result = model.predict([cleaned_review])
     output = str(result[0])
     labels = {"__label__0": "Elegible", "__label__1": "No elegible"}
-
-    # show results
-    resultado = {"prediction": labels[output]} #"Probability": output_probability}
-
+    resultado = {"prediction": labels[output]} 
     return resultado
-    #lists = result.tolist()
-    #json_predict = json.dumps(lists)
-    #return {"predict": json_predict}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000, debug=True)
