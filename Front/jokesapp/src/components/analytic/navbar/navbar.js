@@ -3,9 +3,9 @@ import React from "react";
 // Funcion NavbarMarvel
 function Navbar () {
     return (
-            <nav className="navbar navbar-dark bg-primary">
+            <nav className="navbar navbar-dark bg-dark">
                 <div class="container-fluid">
-                    <span class="navbar-brand mb-0 h1">Proyecto 1 - Parte 2</span>
+                    <span class="navbar-brand mb-0 h1">SaludAlpes</span>
                 </div>
             </nav>
     )

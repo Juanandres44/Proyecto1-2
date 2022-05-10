@@ -1,6 +1,6 @@
 import React from "react";
-import FormAnalytic from "./formAnalytic/formAnalytic";
-import Navbar from "./navbarAnalytic/navbar";
+import FormularioProyecto from "./formulario/formularioPr";
+import Navbar from "./navbar/navbar";
 
 // Funcion Analtytic
 function Analtytic () {
@@ -9,7 +9,7 @@ function Analtytic () {
             <Navbar />
             <div className="container">
                 <div>
-                    <FormAnalytic />
+                    <FormularioProyecto />
                 </div>
             </div>
         </div>
