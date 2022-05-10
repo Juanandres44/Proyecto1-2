@@ -1,6 +1,5 @@
 # Proyecto 1 Etapa 2 - Inteligencia de Negocios
 
-##P
 
 <h3>Backend</h3>
 <strong>Instrucciones de instalación:</strong>
