@@ -4,6 +4,7 @@ from string import punctuation
 from tokenize import String
 
 import json
+import unicodedata
 from DataModel import DataModel, DListar
 from pandas import json_normalize
 from fastapi.encoders import jsonable_encoder
@@ -15,19 +16,33 @@ import nltk
 nltk.download('omw-1.4')
 
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer,LancasterStemmer
 import re  # regular expression
 
 import os
 from os.path import dirname, join, realpath
 import joblib
 import uvicorn
+import inflect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
 app = FastAPI(
     title="Elegible Cancer Model API",
     description="Aplicacion simple que predice si un paciente es elegible o no para ensayos clínicos de cáncer a partir de texto descriptivo",
     version="0.1",
+)
+
+origins = ["http://localhost:3000"]
+
+
+# Manejo de las cors para habilitar los endpoints
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # load the model
@@ -37,36 +52,75 @@ with open(
     model = joblib.load(f)
 
 
-# cleaning the data
-def text_cleaning(text, remove_stop_words=True, lemmatize_words=True):
 
-    # Clean the text
-    text = re.sub(r"[^A-Za-z0-9]", " ", str(text))
-    text = re.sub(r"\'s", " ", str(text))
-    text = re.sub(r"http\S+", " link ", str(text))
-    text = re.sub(r"\b\d+(?:\.\d+)?\s+", "", str(text))  # remove numbers
+    def remove_non_ascii(words):
+        new_words = []
+        for word in words:
+            new_word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore').decode('utf-8', 'ignore')
+            new_words.append(new_word)
+        return new_words
+    
+    def to_lowercase(words):
+        new_words = []
+        for word in words:
+            new_word = word.lower()
+            new_words.append(new_word)
+        return new_words
+    
+    def remove_punctuation(words):
+        new_words = []
+        for word in words:
+            new_word = re.sub(r'[^\w\s]', '', word)
+            if new_word != '':
+                new_words.append(new_word)
+        return new_words
+        
+    def replace_numbers(words):
+        p = inflect.engine()
+        new_words = []
+        for word in words:
+            if word.isdigit():
+                new_word = p.number_to_words(word)
+                new_words.append(new_word)
+            else:
+                new_words.append(word)
+        return new_words
+    
+    def remove_stopwords(words):
+        new_words = []
+        for word in words:
+            if word not in stopwords.words('english'):
+                new_words.append(word)
+        return new_words
+        
+    def preprocessing(words):
+        words = to_lowercase(words)
+        words = replace_numbers(words)
+        words = remove_punctuation(words)
+        words = remove_non_ascii(words)
+        words = remove_stopwords(words)
+        return words
 
-    # Remove punctuation from text
-    text = "".join([c for c in text if c not in punctuation])
-
-    # Optionally, remove stop words
-    if remove_stop_words:
-
-        # load stopwords
-        stop_words = stopwords.words("english")
-        text = text.split()
-        text = [w for w in text if not w in stop_words]
-        text = " ".join(text)
-
-    # Optionally, shorten words to their stems
-    if lemmatize_words:
-        text = text.split()
+    def stem_words(words):
+        stemmer = LancasterStemmer()
+        stems = []
+        for word in words:
+            stem = stemmer.stem(word)
+            stems.append(stem)
+        return stems
+            
+    def lemmatize_verbs(words):
         lemmatizer = WordNetLemmatizer()
-        lemmatized_words = [lemmatizer.lemmatize(word) for word in text]
-        text = " ".join(lemmatized_words)
-
-    # Return a list of words
-    return text
+        lemmas = []
+        for word in words:
+            lemma = lemmatizer.lemmatize(word, pos='v')
+            lemmas.append(lemma)
+        return lemmas
+        
+    def stem_and_lemmatize(words):
+        stems = stem_words(words)
+        lemmas = lemmatize_verbs(words)
+        return stems + lemmas
 
 @app.get("/")
 def read_root():
@@ -77,42 +131,17 @@ def read_root():
         "Integrante 3": "Juan Andrés Santiago - 201821950"   
     }
 
-@app.get("/predict-elegibilit")
-def predict_label(study: str):
-    """
-    A simple function that receive a review content and predict the sentiment of the content.
-    :param review:
-    :return: prediction, probabilities
-    """
-    # clean the review
-    cleaned_review = text_cleaning(study)
-
-    # perform prediction
-    prediction = model.predict([cleaned_review])
-    output = str(prediction[0])
-    # probas = model.predict_proba([cleaned_review])
-    # output_probability = "{:.2f}".format(int(probas[:, output]))
-
-    # output dictionary
-    labels = {"__label__0": "Elegible", "__label__1": "No elegible"}
-
-    # show results
-    result = {"prediction": labels[output]} #"Probability": output_probability}
-
-    return result
 
 @app.post("/predict-elegibility")
 def postKNN(data: DListar):
     dict = jsonable_encoder(data)
     df = json_normalize(dict['texto'])
-    cleaned_review = text_cleaning(df) 
+    cleaned_review = preprocessing(df)
+    cleaned_review = stem_and_lemmatize(df) 
     df.columns = DataModel.columns()
-    result = model.predict([cleaned_review])
+    result = model.predict(cleaned_review)
     output = str(result[0])
     labels = {"__label__0": "Elegible", "__label__1": "No elegible"}
     resultado = {"prediction": labels[output]} 
     return resultado
 
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, debug=True)
