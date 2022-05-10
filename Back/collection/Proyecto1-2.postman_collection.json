@@ -1,0 +1,40 @@
+{
+	"info": {
+		"_postman_id": "cc5c31d1-99f4-4a8e-9ab9-d705e0bfa32d",
+		"name": "Proyecto1-2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Elegibility",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"texto\": [\r\n    {\r\n      \"study_and_condition\": \"study interventions are Cyclin-Dependent Kinase Inhibitor Proteins . triple negative breast cancer diagnosis and male subjects of childbearing potential must agree to use an adequate method of contraception starting with the first dose of study therapy through one hundred and twenty days after the last dose of study therapy\"\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/predict-elegibility",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"predict-elegibility"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
